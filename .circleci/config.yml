@@ -162,7 +162,7 @@ jobs:
     steps:
       - checkout
       - add_ssh_keys:
-          fingerprints: [""]      # Add ssh keys with fingerprint
+          fingerprints: ["29:69:fc:dc:81:74:5b:9e:5f:a0:a2:63:cf:8b:f2:9c"]      # Add ssh keys with fingerprint
       - attach_workspace:
           at: /tmp/.circleci/ansible
       - run:
@@ -174,6 +174,106 @@ jobs:
           command: |
             cat /tmp/.circleci/ansible/inventory.txt
             ansible-playbook -i /tmp/.circleci/ansible/inventory.txt .circleci/ansible/configure-server.yml
+
+  run-migrations:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+      - run:
+          name: Run migrations
+          command: |
+            cd backend
+            sudo apt-get update
+            sudo apt-get install awscli
+            npm install
+            npm run migrations >> migrations_file.txt
+      - run:
+          name: Send migration results to memstash
+          command: |
+            cd backend
+            if grep -q "has been executed successfully." migrations_file.txt
+            then
+              curl -H "Content-Type: text/plain" -H "token: udapeople-project3-migration-${CIRCLE_WORKFLOW_ID}" --request PUT --data "1" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID}
+            else
+              echo $(curl -H "Content-Type: text/plain" -H "token: udapeople-project3-migration-${CIRCLE_WORKFLOW_ID}" --request PUT --data "0" https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID})
+            fi
+      # Here's where you will add some code to rollback on failure                
+  
+  deploy-frontend:
+    docker:
+        - image: amazon/aws-cli
+    steps:
+      - checkout
+      - restore_cache:
+          keys: [frontend-build]
+      - run:
+          name: Install dependencies
+          command: |
+            yum install -y curl tar gzip sudo
+            # Install Nodejs
+            curl -sL https://rpm.nodesource.com/setup_13.x | sudo bash -
+            yum install -y nodejs
+      - run:
+          name: Get backend url
+          command: |
+            # your code here
+            BACKEND_URL=$(curl -H "token: udapeople-project3-BackendURL-${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/BackendURL)
+            export API_URL="http://${BACKEND_URL}:3030"
+            echo "${API_URL}" >> .circleci/Backend_URL.txt
+      - run:
+          name: Deploy frontend objects
+          command: |
+            export API_URL=$(cat .circleci/Backend_URL.txt)
+            echo "${API_URL}" > frontend/.env
+            cd frontend
+            npm i
+            npm run build
+            aws s3 cp dist s3://udapeople-"${CIRCLE_WORKFLOW_ID}" --recursive
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID}
+          
+  deploy-backend:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["29:69:fc:dc:81:74:5b:9e:5f:a0:a2:63:cf:8b:f2:9c"]      # Add ssh keys with fingerprint
+      - restore_cache:
+          keys: [backend-build]
+      - attach_workspace:
+          at: /tmp/.circleci/ansible
+      - run:
+          name: Install dependencies
+          command: |
+            sudo apt-get update
+            sudo apt-get install python3
+            sudo apt-get install ansible
+            sudo apt-get install awscli            
+      - run:
+          name: Deploy backend
+          command: |
+            echo ENVIROMENT=production >> "backend/.env"
+            echo TYPEORM_CONNECTION=postgres >> "backend/.env"
+            echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> "backend/.env"
+            echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> "backend/.env"
+            echo TYPEORM_MIGRATIONS=./src/migrations/*.ts >> "backend/.env"
+            echo TYPEORM_HOST=$TYPEORM_HOST >> "backend/.env"
+            echo TYPEORM_PORT=$TYPEORM_PORT >> "backend/.env"
+            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> "backend/.env"
+            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> "backend/.env"
+            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> "backend/.env"
+            
+            tar -C backend -czvf backend.tar.gz .
+            
+            cat /tmp/.circleci/ansible/inventory.txt
+                        
+            export ANSIBLE_HOST_KEY_CHECKING=False
+            ansible-playbook -i  /tmp/.circleci/ansible/inventory.txt .circleci/ansible/deploy-backend.yml
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID}
+      # Here's where you will add some code to rollback on failure
 
 workflows:
   default:
