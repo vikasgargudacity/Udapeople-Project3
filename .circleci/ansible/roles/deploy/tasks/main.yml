@@ -1,0 +1,49 @@
+---
+- name: "install apt packages."
+  become: yes
+  apt:
+    update_cache: yes
+
+- name: Creates directory
+  file:
+    path: /home/ubuntu/backend
+    state: directory
+
+- name: Copy code to backend server
+  copy:
+    src: "~/project/backend.tar.gz"
+    dest: "/home/ubuntu/"
+
+- name: Create build on backend server
+  shell: |
+    cd /home/ubuntu/
+    sudo apt-get install tar
+    tar -xvzf backend.tar.gz -C /home/ubuntu/backend
+    
+- name: Install nodejs, npm and pm2
+  shell: |    
+    sudo npm install typescript -g
+    curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+    sudo apt-get install -y nodejs
+    sudo npm install pm2 -g
+
+- name: Build backend
+  shell: |    
+    cd backend
+    sudo npm run build
+    
+- name: Executing node
+  environment:
+    ENVIRONMENT: "production"
+    TYPEORM_CONNECTION: "postgres"
+    TYPEORM_ENTITIES: "./src/modules/domain/**/*.entity.ts"
+    TYPEORM_HOST: "{{ lookup('env', 'TYPEORM_HOST') }}"
+    TYPEORM_PORT: "{{ lookup('env', 'TYPEORM_PORT') }}"
+    TYPEORM_USERNAME: "{{ lookup('env', 'TYPEORM_USERNAME') }}"
+    TYPEORM_PASSWORD: "{{ lookup('env', 'TYPEORM_PASSWORD') }}"
+    TYPEORM_DATABASE: "{{ lookup('env', 'TYPEORM_DATABASE') }}"
+  shell: |
+    cd /home/ubuntu/backend
+    pm2 start npm --name backend -- start
+    cd dist
+    pm2 start main.js
