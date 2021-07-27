@@ -361,16 +361,37 @@ jobs:
             if curl -s ${URL} | grep "Welcome"
             then
               echo "Successful front-end Smoke-test" 
-              exit 1
             else
               echo "Unsuccessful front-end Smoke-test"
-              exit 0
             fi
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID}
       - revert-migrations:
           workflow_id: ${CIRCLE_WORKFLOW_ID}
-
+          
+  cloudfront-update:
+    docker:
+        - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            yum install -y curl
+      - run:
+          name: Update cloudfront distribution
+          command: |
+            # your code here
+            aws cloudformation deploy \
+              --template-file .circleci/files/cloudfront.yml \
+              --stack-name "udapeople-project3-CF" \
+              --tags project=udapeople-project3 \
+              --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID}" 
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID}
+      - revert-migrations:
+          workflow_id: ${CIRCLE_WORKFLOW_ID}          
+          
 workflows:
   default:
     jobs:
@@ -396,3 +417,5 @@ workflows:
           requires: [run-migrations]
       - smoke-test:
           requires: [deploy-backend, deploy-frontend]
+      - cloudfront-update:
+          requires: [smoke-test]
