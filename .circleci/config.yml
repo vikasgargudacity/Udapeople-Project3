@@ -108,6 +108,56 @@ jobs:
           paths: [backend/node_modules]
           key: backend-scan
 
+  deploy-infrastructure:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Ensure back-end infrastructure exists
+          command: |
+            aws cloudformation deploy \
+              --template-file .circleci/files/backend.yml \
+              --tags project=udapeople-project3 \
+              --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID}" \
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID}"  
+      - run:
+          name: Ensure front-end infrastructure exist
+          command: |
+            aws cloudformation deploy \
+              --template-file .circleci/files/frontend.yml \
+              --tags project=udapeople-project3 \
+              --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID}" \
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID}"  
+      - run:
+          name: Add back-end ip to ansible inventory
+          command: |
+            cd .circleci/ansible
+            aws ec2 describe-instances \
+            --query 'Reservations[*].Instances[*].PublicIpAddress' \
+            --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID}" \
+            --output text >> inventory.txt
+            cat inventory.txt
+      - run:
+          name: Save back-end url link
+          command: |
+            BackendURL=$(aws ec2 describe-instances \
+            --query 'Reservations[*].Instances[*].PublicIpAddress' \
+            --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID}" \
+            --output text)
+            echo "Backend URL": $BackendURL
+            curl -H "Content-Type: text/plain" -H "token: udapeople-project3-BackendURL-${CIRCLE_WORKFLOW_ID}" --request PUT --data "$BackendURL" https://api.memstash.io/values/BackendURL
+      - run:
+          name: Install tar/gzip utility
+          command: |
+            yum -y install tar gzip
+      - persist_to_workspace:
+          root: .circleci/ansible
+          paths:
+            - inventory.txt  
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID}
+
 workflows:
   default:
     jobs:
@@ -121,3 +171,5 @@ workflows:
           requires: [build-backend]
       - scan-frontend:
           requires: [build-frontend]      
+      - deploy-infrastructure:
+          requires: [test-frontend, test-backend, scan-frontend, scan-backend]
