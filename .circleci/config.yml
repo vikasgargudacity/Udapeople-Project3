@@ -15,15 +15,13 @@ commands:
           name: Destroy environments
           when: on_fail
           command: |
-            # Detroy the environment incase of any failures
+            # Delete the S3 buckets. 
+            aws s3 rb s3://udapeople-<<parameters.workflow_id>> --force                 
+            
             # Delete the stacks
             aws cloudformation delete-stack --stack-name udapeople-backend-<<parameters.workflow_id>>
             aws cloudformation delete-stack --stack-name udapeople-frontend-<<parameters.workflow_id>>
-            aws cloudformation delete-stack --stack-name udapeople-cloudfront
 
-            # Delete the S3 buckets. 
-            aws s3 rb s3://udapeople-<<parameters.workflow_id>> --force                 
-  
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
     parameters:
@@ -384,7 +382,7 @@ jobs:
           command: |
               aws cloudformation deploy \
               --template-file .circleci/files/cloudfront.yml \
-              --stack-name udapeople-cloudfront \
+              --stack-name udapeople-cloudfront-project3 \
               --tags project=udapeople-project3 \
               --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID}"       
               
