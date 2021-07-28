@@ -416,7 +416,7 @@ jobs:
       - run:
           name: Remove old stacks and files
           command: |
-            for ((i=0;i<${#STACKS[@]};i++))
+            for ((i=0;i<${STACKS[@]};i++))
               do  
                 echo "Stacks2 : " ${STACKS[0]:19}
 
