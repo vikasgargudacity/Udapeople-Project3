@@ -411,8 +411,11 @@ jobs:
               --stack-status-filter CREATE_COMPLETE UPDATE_COMPLETE --no-paginate --output text))
             
             echo "Stacks1 : " ${STACKS[@]}
-            echo "Stacks2 : " ${STACKS[@][19:]}
-            echo "Stacks3 : " ${STACKS[@][:19]}
+            echo "Stacks2 : " ${STACKS[0]:19}
+            echo "Stacks3 : " ${STACKS[0][:19]}
+            echo "Stacks4 : " ${STACKS[0][0]}
+            echo "Stacks5 : " ${STACKS[0]}
+
 
       
       - run:
