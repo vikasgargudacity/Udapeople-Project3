@@ -187,7 +187,7 @@ jobs:
             --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID}" \
             --output text)
             echo "Backend URL": $BackendURL
-            curl -H "Content-Type: text/plain" -H "token: udapeople-project3-BackendURL-${CIRCLE_WORKFLOW_ID}" --request PUT --data "$BackendURL" https://api.memstash.io/values/BackendURL
+            curl -H "Content-Type: text/plain" -H "token: udapeople-project3-BackendURL-${CIRCLE_WORKFLOW_ID}" --request PUT --data "$BackendURL" https://api.memstash.io/values/BackendURL_${CIRCLE_WORKFLOW_ID}
       - run:
           name: Install tar/gzip utility
           command: |
@@ -268,7 +268,7 @@ jobs:
           name: Get backend url
           command: |
             # your code here
-            BACKEND_URL=$(curl -H "token: udapeople-project3-BackendURL-${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/BackendURL)
+            BACKEND_URL=$(curl -H "token: udapeople-project3-BackendURL-${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/BackendURL_${CIRCLE_WORKFLOW_ID})
             export API_URL="http://${BACKEND_URL}:3030"
             echo "${API_URL}" >> .circleci/Backend_URL.txt
       - run:
@@ -344,7 +344,7 @@ jobs:
           name: Get backend url
           command: |          
               curl -H "token: udapeople-project3-BackendURL-${CIRCLE_WORKFLOW_ID}" \
-                --request GET https://api.memstash.io/values/BackendURL \
+                --request GET https://api.memstash.io/values/BackendURL_${CIRCLE_WORKFLOW_ID} \
                 > .circleci/Backend_URL.txt
       - run:
           name: Backend smoke test.
@@ -413,7 +413,7 @@ jobs:
           name: Get old stack workflow id
           command: |
             # get old WorkFlowId            
-            export OldWorkflowID=$(curl -H "token: udapeople-project3-OldWorkflowID" --request GET https://api.memstash.io/values/OldWorkflowID_${CIRCLE_WORKFLOW_ID})
+            export OldWorkflowID=$(curl -H "token: udapeople-project3-OldWorkflowID-${CIRCLE_WORKFLOW_ID}" --request GET https://api.memstash.io/values/OldWorkflowID_${CIRCLE_WORKFLOW_ID})
             echo $OldWorkflowID
             
             # get all stacks
