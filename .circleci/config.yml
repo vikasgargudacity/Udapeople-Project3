@@ -382,7 +382,7 @@ jobs:
           command: |
               aws cloudformation deploy \
               --template-file .circleci/files/cloudfront.yml \
-              --stack-name udapeople-cloudfront-project3 \
+              --stack-name udapeople-cloudfront \
               --tags project=udapeople-project3 \
               --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID}"       
               
