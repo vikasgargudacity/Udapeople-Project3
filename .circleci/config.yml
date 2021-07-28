@@ -417,14 +417,9 @@ jobs:
           command: |
             for ((i=0;i<${#STACKS[@]};i++))
               do  
-#                if [[ "${STACKS[i]:14}" =~ "${CIRCLE_WORKFLOW_ID}" ]]
-                if [[ "${STACKS[i]:14}" =~ "${CIRCLE_WORKFLOW_ID}" ]]
-
+                if [[ "${STACKS[i]:14}" =~ "639a961c-15f9-489f-a3a8-221b475b2294" ]]
                 then
                     echo "Deleted Stack :" ${STACKS[i]:14} 
- #                   aws s3 rm s3://udapeople-"${STACKS[i]:14}" --recursive
- #                   aws cloudformation delete-stack --stack-name udapeople-frontend-"${STACKS[i]:14}"
- #                   aws cloudformation delete-stack --stack-name udapeople-backend-"${STACKS[i]:14}"
                 fi
               done
               
