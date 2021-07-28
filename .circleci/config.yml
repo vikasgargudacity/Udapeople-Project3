@@ -401,25 +401,17 @@ jobs:
       - run:
           name: Get old stack workflow id
           command: |
-            export OldWorkflowID=$(aws cloudformation \
-              list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
-              --no-paginate --output text)
-            
-            echo "Old Workflow ID : " ${OldWorkflowID}
-  
             export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
               --stack-status-filter CREATE_COMPLETE UPDATE_COMPLETE --no-paginate --output text))
             
             echo "Stacks1 : " ${STACKS[@]}
-            echo "Stacks2 : " ${STACKS[0]:19}
 
-            for ((i=0;i<5;i++))
+            for ((i=0;i<${#STACKS[@]};i++))
               do  
                 echo "Stacks2 : " ${STACKS[0]:19}
-
-                if [[ "${STACKS[0]:19}" =~ "639a961c-15f9-489f-a3a8-221b475b2294" ]]
+                if [[ "${STACKS[i]:19}" =~ "${WorkflowID}" ]]
                 then
-                    echo "Deleted Stack :" ${STACKS[0]:19} 
+                    echo "Deleted Stack :" ${STACKS[i]:19}
                 fi
               done
               
