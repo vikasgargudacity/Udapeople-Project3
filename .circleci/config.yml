@@ -412,22 +412,17 @@ jobs:
             
             echo "Stacks1 : " ${STACKS[@]}
             echo "Stacks2 : " ${STACKS[0]:19}
-            echo "Stacks3 : " ${STACKS[0][:19]}
-            echo "Stacks4 : " ${STACKS[0][0]}
-            echo "Stacks5 : " ${STACKS[0]}
-
-
-      
+     
       - run:
           name: Remove old stacks and files
           command: |
             for ((i=0;i<${#STACKS[@]};i++))
               do  
-                echo "Stacks2 : " ${STACKS[i][19:]}
+                echo "Stacks2 : " ${STACKS[0]:19}
 
-                if [[ "${STACKS[i][19:]}" =~ "639a961c-15f9-489f-a3a8-221b475b2294" ]]
+                if [[ "${STACKS[0]:19}" =~ "639a961c-15f9-489f-a3a8-221b475b2294" ]]
                 then
-                    echo "Deleted Stack :" ${STACKS[i][19:]} 
+                    echo "Deleted Stack :" ${STACKS[0]:19} 
                 fi
               done
               
